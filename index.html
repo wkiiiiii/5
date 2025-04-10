@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Two Player Card Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>Card Game Room</h1>
+        
+        <div class="seats-container">
+            <div class="seat" id="seat1">
+                <div class="seat-label">Player 1</div>
+                <button class="join-button" id="join1">Take Seat</button>
+                <div class="player-name" id="player1-name"></div>
+            </div>
+            
+            <div class="seat" id="seat2">
+                <div class="seat-label">Player 2</div>
+                <button class="join-button" id="join2">Take Seat</button>
+                <div class="player-name" id="player2-name"></div>
+            </div>
+        </div>
+        
+        <div class="game-status" id="game-status">
+            Waiting for players...
+        </div>
+        
+        <div class="cards-container">
+            <div class="player-cards" id="player1-cards"></div>
+            <div class="player-cards" id="player2-cards"></div>
+        </div>
+    </div>
+    
+    <!-- Socket.IO client library -->
+    <script src="/socket.io/socket.io.js"></script>
+    <!-- Game script -->
+    <script src="script.js"></script>
+</body>
+</html> 

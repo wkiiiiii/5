@@ -16,16 +16,14 @@ body {
 .game-container {
     background-color: #2e7d32;
     border-radius: 10px;
-    padding: 20px;
+    padding: 30px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
     max-width: 800px;
     width: 100%;
-}
-
-h1 {
-    text-align: center;
-    color: white;
-    margin-bottom: 20px;
+    position: relative;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
 }
 
 .seats-container {
@@ -41,6 +39,7 @@ h1 {
     width: 200px;
     text-align: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    position: relative;
 }
 
 .seat-label {
@@ -78,9 +77,13 @@ h1 {
 .game-status {
     text-align: center;
     color: white;
-    font-size: 18px;
-    margin-bottom: 30px;
+    font-size: 16px;
     min-height: 30px;
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 0;
+    width: 100%;
 }
 
 .cards-container {
@@ -88,6 +91,9 @@ h1 {
     flex-direction: column;
     align-items: center;
     gap: 30px;
+    flex-grow: 1;
+    position: relative;
+    margin-bottom: 60px;  /* Space for the bottom bar */
 }
 
 .player-cards {
@@ -99,6 +105,15 @@ h1 {
     background-color: rgba(0, 0, 0, 0.1);
     border-radius: 8px;
     padding: 15px;
+}
+
+.your-cards {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.15);
+    border-top: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .player-card-label {
@@ -113,7 +128,6 @@ h1 {
 .card {
     width: 80px;
     height: 120px;
-    background-color: white;
     border-radius: 5px;
     margin: 5px;
     display: flex;
@@ -122,20 +136,89 @@ h1 {
     align-items: center;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s ease;
 }
 
-.red {
-    color: red;
+.card:hover {
+    transform: translateY(-5px);
 }
 
-.black {
-    color: black;
+.card-name {
+    font-size: 16px;
+    text-transform: uppercase;
 }
 
-.card-value {
-    font-size: 24px;
+/* Game info bar at bottom */
+.game-info-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgba(0, 0, 0, 0.25);
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 30px;
+    border-radius: 0 0 10px 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.card-suit {
-    font-size: 28px;
+.status-container {
+    flex: 1;
+    margin-right: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.opponent-info {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    color: white;
+}
+
+.opponent-card-count {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 10px 15px;
+    border-radius: 8px;
+    text-align: right;
+}
+
+.opponent-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+    font-size: 16px;
+}
+
+.card-count {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.first-player-token {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: #FFD700;
+    color: #222;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-weight: bold;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    font-size: 14px;
+    animation: pulse 2s infinite;
+    z-index: 10;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
 } 

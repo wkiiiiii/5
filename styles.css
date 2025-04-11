@@ -221,4 +221,15 @@ body {
     100% {
         transform: scale(1);
     }
+}
+
+@keyframes card-played {
+    0% {
+        transform: scale(0.5);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
 } 

@@ -97,12 +97,15 @@ function dealCards() {
     hands[2].push(deck.pop());
   }
   
-  // Save hands in game state
-  gameState.hands = hands;
-  
   // Randomly choose first player
   const firstPlayer = Math.random() < 0.5 ? 1 : 2;
   gameState.currentPlayer = firstPlayer;
+  
+  // Deal one extra card to the first player
+  hands[firstPlayer].push(deck.pop());
+  
+  // Save hands in game state
+  gameState.hands = hands;
   
   return { hands, firstPlayer };
 }
@@ -174,13 +177,8 @@ io.on('connection', (socket) => {
   
   // Handle player playing a card
   socket.on('playCard', (data) => {
-    const { card, seatNumber } = data;
+    const { card, seatNumber, isReaction } = data;
     const playerId = socket.id;
-    
-    // Verify it's this player's turn
-    if (gameState.currentPlayer !== seatNumber) {
-      return;
-    }
     
     // Verify player is in this seat
     if (!gameState.seats[seatNumber] || gameState.seats[seatNumber].id !== playerId) {
@@ -197,23 +195,114 @@ io.on('connection', (socket) => {
     // Notify the opponent
     const opponentSeat = seatNumber === 1 ? 2 : 1;
     if (gameState.seats[opponentSeat]) {
-      io.to(gameState.seats[opponentSeat].id).emit('opponentPlayedCard', { card });
-    }
-    
-    // Switch to opponent's turn
-    gameState.currentPlayer = opponentSeat;
-    
-    // Notify players of turn change
-    if (gameState.seats[opponentSeat]) {
-      io.to(gameState.seats[opponentSeat].id).emit('changeTurn', { 
-        nextPlayer: opponentSeat,
-        drawnCards: []
+      io.to(gameState.seats[opponentSeat].id).emit('opponentPlayedCard', { 
+        card,
+        isReaction
       });
     }
-    io.to(playerId).emit('changeTurn', { 
-      nextPlayer: opponentSeat,
-      drawnCards: []
-    });
+    
+    // If this is a reaction, switch to the next player's full turn (the player who reacted)
+    // If not a reaction, we stay in the subturn mode for opponent's reaction
+    if (isReaction) {
+      // Switch to the player who played the reaction card (they get the next full turn)
+      gameState.currentPlayer = seatNumber;
+      
+      // Deal one card to the player at the start of their turn
+      const drawnCard = drawCards(seatNumber, 1);
+      
+      // Notify both players of turn change - the player who reacted now gets their turn
+      if (gameState.seats[opponentSeat]) {
+        io.to(gameState.seats[opponentSeat].id).emit('changeTurn', { 
+          nextPlayer: seatNumber,
+          drawnCards: [{ count: 1 }] // Send card count info instead of empty array
+        });
+      }
+      io.to(playerId).emit('changeTurn', { 
+        nextPlayer: seatNumber,
+        drawnCards: drawnCard // Send the drawn card to the player
+      });
+      
+      console.log(`Player ${seatNumber} played a reaction card. Turn switches to them and they drew 1 card.`);
+    } else {
+      // For the first play, just notify that we're waiting for reaction
+      // The reaction will be handled by the client
+      // We don't change currentPlayer here since the opponent still needs to react
+    }
+  });
+  
+  // Handle player passing during a reaction
+  socket.on('pass', (data) => {
+    const { seatNumber } = data;
+    const playerId = socket.id;
+    
+    // Verify player is in this seat
+    if (!gameState.seats[seatNumber] || gameState.seats[seatNumber].id !== playerId) {
+      return;
+    }
+    
+    // Deduct health
+    gameState.health[seatNumber]--;
+    
+    // Draw 3 cards as compensation for losing health
+    const compensationCards = drawCards(seatNumber, 3);
+    
+    // Reset played cards
+    gameState.playedCards = [];
+    
+    // Switch to the player who passed (this player gets the next turn)
+    const nextPlayer = seatNumber; // The player who passed gets the next turn
+    const opponentSeat = seatNumber === 1 ? 2 : 1; // Still need this for notifications
+    gameState.currentPlayer = nextPlayer;
+    
+    // Deal one card to the player at the start of their turn
+    const drawnCard = drawCards(nextPlayer, 1);
+    
+    // Combine all drawn cards for the player
+    const allDrawnCards = [...compensationCards, ...drawnCard];
+    
+    // Notify opponent that this player passed with a clear health update
+    if (gameState.seats[opponentSeat]) {
+      io.to(gameState.seats[opponentSeat].id).emit('opponentPassed', { 
+        seatNumber,
+        health: gameState.health[seatNumber],
+        nextPlayer: nextPlayer // Add who gets the next turn
+      });
+    }
+    
+    // Add a small delay before changing turn to ensure events are processed in order
+    setTimeout(() => {
+      // Notify players of turn change
+      if (gameState.seats[opponentSeat]) {
+        io.to(gameState.seats[opponentSeat].id).emit('changeTurn', { 
+          nextPlayer: nextPlayer, // Now the player who passed gets the next turn
+          drawnCards: [{ count: allDrawnCards.length }] // Send card count info instead of empty array
+        });
+      }
+      io.to(playerId).emit('changeTurn', { 
+        nextPlayer: nextPlayer, // Now the player who passed gets the next turn
+        drawnCards: allDrawnCards // Send all drawn cards to the player
+      });
+      
+      console.log(`Player ${seatNumber} passed. Turn switched to player ${nextPlayer} (same player who passed). Drew ${allDrawnCards.length} cards (3 for health loss + 1 for turn).`);
+    }, 200); // 200ms delay
+    
+    // Check for game over (health <= 0)
+    if (gameState.health[seatNumber] <= 0) {
+      // Notify players of game over
+      const gameOverData = {
+        winner: opponentSeat,
+        loser: seatNumber
+      };
+      io.emit('gameOver', gameOverData);
+      
+      // Reset game
+      gameState.gameStarted = false;
+      gameState.firstPlayer = null;
+      gameState.currentPlayer = null;
+      gameState.playedCards = [];
+      gameState.health[1] = 5;
+      gameState.health[2] = 5;
+    }
   });
   
   // Handle player passing their turn
@@ -234,7 +323,7 @@ io.on('connection', (socket) => {
     // Deduct health
     gameState.health[seatNumber]--;
     
-    // Draw 3 cards
+    // Draw 3 cards as compensation for losing health
     const drawnCards = drawCards(seatNumber, 3);
     
     // Reset played cards
@@ -243,6 +332,9 @@ io.on('connection', (socket) => {
     // Switch to opponent's turn
     const opponentSeat = seatNumber === 1 ? 2 : 1;
     gameState.currentPlayer = opponentSeat;
+    
+    // Deal one card to the opponent at the start of their turn
+    const opponentDrawnCard = drawCards(opponentSeat, 1);
     
     // Notify opponent that this player passed
     if (gameState.seats[opponentSeat]) {
@@ -256,13 +348,15 @@ io.on('connection', (socket) => {
     if (gameState.seats[opponentSeat]) {
       io.to(gameState.seats[opponentSeat].id).emit('changeTurn', { 
         nextPlayer: opponentSeat,
-        drawnCards: []
+        drawnCards: opponentDrawnCard // Send the drawn card to the opponent
       });
     }
     io.to(playerId).emit('changeTurn', { 
       nextPlayer: opponentSeat,
       drawnCards: drawnCards
     });
+    
+    console.log(`Player ${seatNumber} passed their turn. Drew 3 cards as compensation for health loss. Turn switched to player ${opponentSeat}.`);
     
     // Check for game over (health <= 0)
     if (gameState.health[seatNumber] <= 0) {

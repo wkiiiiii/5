@@ -11,6 +11,17 @@ A web-based card game room for 2 players. When both seats are taken, players are
 - Real-time updates via Socket.IO
 - Supports playing from different browsers/devices
 
+## Gameplay Mechanics
+
+- Deck consists of 5 element types (gold, wood, water, fire, earth) with 20 cards each, plus 10 "miss" cards
+- When it's a player's turn, they can choose any card they have, except miss cards
+- Selected cards show a dotted line border to indicate they are selected
+- Players must click the Confirm button to play their selected card
+- The card played by the player is then displayed at the middle of the game board, showing which card the player played
+- Players take turns playing cards
+- Each player starts with 5 health points
+- Game ends when a player's health reaches zero
+
 ## How to Use
 
 ### Setup
@@ -39,14 +50,16 @@ A web-based card game room for 2 players. When both seats are taken, players are
 3. Enter your name when prompted
 4. Once both seats are taken, the game will automatically start
 5. Each player will be dealt 5 random cards
-6. Players can see both their own cards and their opponent's cards
+6. On your turn, select a card from your hand (except miss cards) - a dotted border will appear around the selected card
+7. Click the Confirm button to play your selected card
+8. Played cards appear in the center of the game board
 
 ## Tech Stack
 
 - Node.js and Express.js for the server
 - Socket.IO for real-time communication
 - Vanilla HTML, CSS, and JavaScript for the front-end
-- Standard playing card deck (52 cards)
+- Custom elemental card deck (110 cards)
 - Fisher-Yates algorithm for shuffling cards
 
 ## Deployment
